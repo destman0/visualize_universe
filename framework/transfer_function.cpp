@@ -194,6 +194,7 @@ Transfer_function::draw_texture(const glm::vec2& tf_pos, const glm::vec2& tf_siz
     glViewport((GLint)tf_pos.x, (GLint)tf_pos.y, (GLint)tf_size.x, (GLint)tf_size.y);
 
     glUseProgram(m_program_id);
+	//glBindTexture(GL_TEXTURE_2D, texture);
     glUniformMatrix4fv(glGetUniformLocation(m_program_id, "Projection"), 1, GL_FALSE,
         //glm::value_ptr(projection));
         &ortho_projection[0][0]);
@@ -206,5 +207,5 @@ Transfer_function::draw_texture(const glm::vec2& tf_pos, const glm::vec2& tf_siz
     m_plane.draw();
 
     glUseProgram(0);
-
+	//glBindTexture(GL_TEXTURE_2D, 0);
 }

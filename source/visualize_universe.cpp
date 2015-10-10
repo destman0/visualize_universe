@@ -234,8 +234,9 @@ static bool mousePressed[2] = { false, false };
 
 bool g_show_transfer_function_in_window = false;
 glm::vec2 g_transfer_function_pos = glm::vec2(0.0f);
-glm::vec2 g_multi_function_pos = glm::vec2(300.0f);
+glm::vec2 g_multi_function_pos = glm::vec2(320.0f, 230.0f);
 glm::vec2 g_transfer_function_size = glm::vec2(0.0f);
+glm::vec2 g_multi_function_size = glm::vec2(150.0f);
 
 //imgui values
 bool g_over_gui = false;
@@ -1872,29 +1873,69 @@ int main(int argc, char* argv[])
 		
 		
 		if ((g_show_transfer_function) && (g_active_function == 0)){
-			
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, g_transfer_texture);
 			g_transfer_fun.draw_texture(g_transfer_function_pos, g_transfer_function_size, g_transfer_texture);
+			glBindTexture(GL_TEXTURE_2D, 0);
 			
 		}
 		if ((g_show_transfer_function) && (g_active_function == 2)){
-			
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, g_transfer_texture2);
 			g_transfer_fun2.draw_texture(g_transfer_function_pos, g_transfer_function_size, g_transfer_texture2);
+			glBindTexture(GL_TEXTURE_2D, 0);
 			
 		}
 
 		if ((g_show_transfer_function) && (g_active_function == 3)){
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, g_transfer_texture3);
 			g_transfer_fun3.draw_texture(g_transfer_function_pos, g_transfer_function_size, g_transfer_texture3);
+			glBindTexture(GL_TEXTURE_2D, 0);
 			
 		}
 
 		if ((g_show_transfer_function) && (g_active_function == 4)){
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, g_transfer_texture4);
 			g_transfer_fun4.draw_texture(g_transfer_function_pos, g_transfer_function_size, g_transfer_texture4);
+			glBindTexture(GL_TEXTURE_2D, 0);
 			
 		}
+		
+		if ((g_task_chosen == 5) && (g_func_chosen == 2)){
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, g_multi_tran1);
+			g_transfer_fun.draw_texture(g_multi_function_pos, g_multi_function_size, g_multi_tran1);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
 
-		g_transfer_fun.draw_texture(g_multi_function_pos, g_transfer_function_size, g_multi_tran1);
+		if ((g_task_chosen == 5) && (g_func_chosen == 3)){
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, g_multi_tran2);
+			g_transfer_fun.draw_texture(g_multi_function_pos, g_multi_function_size, g_multi_tran2);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
 
-		glBindTexture(GL_TEXTURE_2D, 0);
+		if ((g_task_chosen == 5) && (g_func_chosen == 4)){
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, g_multi_tran3);
+			g_transfer_fun.draw_texture(g_multi_function_pos, g_multi_function_size, g_multi_tran3);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
+		if ((g_task_chosen == 5) && (g_func_chosen == 5)){
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, g_multi_tran4);
+			g_transfer_fun.draw_texture(g_multi_function_pos, g_multi_function_size, g_multi_tran4);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
+
+
+
+
+		//glBindTexture(GL_TEXTURE_2D, 0);
 		
 		g_win.update();
         first_frame = false;
