@@ -43,6 +43,10 @@ GLuint updateTexture2D(unsigned const texture_id, unsigned const& width, unsigne
     const char* data);
 GLuint createTexture2D(unsigned const& width, unsigned const& height,
     const char* data);
+
+GLuint multiTexture2D(unsigned const& width, unsigned const& height,
+	float* data);
+
 GLuint createTexture3D(unsigned const& width, unsigned const& height,
     unsigned const& depth, unsigned const channel_size,
     unsigned const channel_count, const char* data);

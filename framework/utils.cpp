@@ -78,6 +78,28 @@ GLuint createTexture2D(unsigned const& width, unsigned const& height,
   return tex;
 }
 
+GLuint multiTexture2D(unsigned const& width, unsigned const& height,
+	 float* data)
+{
+	GLuint tex;
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, data);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return tex;
+}
+
+
+
 GLuint updateTexture2D(GLuint tex, unsigned const& width, unsigned const& height,
     const char* data)
 {
@@ -116,13 +138,25 @@ GLuint createTexture3D(unsigned const& width, unsigned const& height,
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  if (channel_size == 1)
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, width, height, depth, 0, GL_RED,
-        GL_UNSIGNED_BYTE, data);
+ // if (channel_size == 1)
+ //   glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, width, height, depth, 0, GL_RGB,
+ //       GL_UNSIGNED_BYTE, data);
 
-  if (channel_size == 2)
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, width, height, depth, 0, GL_RED,
-        GL_UNSIGNED_SHORT, data);
+ //if (channel_size == 2)
+ //   glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, width, height, depth, 0, GL_RGB,
+  //      GL_UNSIGNED_SHORT, data);
+
+  if (channel_count == 3)
+	  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, width, height, depth, 0, GL_RGB,
+	  GL_UNSIGNED_BYTE, data);
+  
+  
+ if (channel_count == 1)
+	  glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, width, height, depth, 0, GL_RED,
+	  GL_UNSIGNED_BYTE, data);
+
+
+
 
   glBindTexture(GL_TEXTURE_2D, 0);
   
