@@ -42,7 +42,15 @@
 
 ///IMGUI INCLUDES
 #include <imgui_impl_glfw_gl3.h>
+using namespace std;
 
+typedef struct halo {
+	float x, y, z;		/* position of body */
+	float vx, vy, vz;		/* velocity of body */
+	float ax, ay, az;		/* acceleration */
+	float phi;			/* potential */
+	int64_t ident;		/* unique identifier */
+} halo;
 
 //-----------------------------------------------------------------------------
 // Helpers
@@ -214,6 +222,13 @@ GLuint g_multi_tran2;
 GLuint g_multi_tran3;
 GLuint g_multi_tran4;
 
+GLuint g_gisto1;
+GLuint g_gisto2;
+GLuint g_gisto3;
+GLuint g_gisto4;
+GLuint g_gisto5;
+GLuint g_gisto6;
+
 bool g_transfer_dirty = true;
 bool g_redraw_tf = true;
 bool g_lighting_toggle = false;
@@ -235,8 +250,10 @@ static bool mousePressed[2] = { false, false };
 bool g_show_transfer_function_in_window = false;
 glm::vec2 g_transfer_function_pos = glm::vec2(0.0f);
 glm::vec2 g_multi_function_pos = glm::vec2(320.0f, 230.0f);
+glm::vec2 g_gist_pos = glm::vec2(320.0f, 230.0f);
 glm::vec2 g_transfer_function_size = glm::vec2(0.0f);
 glm::vec2 g_multi_function_size = glm::vec2(150.0f);
+glm::vec2 g_gist_size = glm::vec2(150.0f);
 
 //imgui values
 bool g_over_gui = false;
@@ -1491,6 +1508,214 @@ int main(int argc, char* argv[])
 	glActiveTexture(GL_TEXTURE4);
 	g_volume_texture4 = read_volume(g_file_string4);
 
+	//Delete from here----------------------------------------------------------------------------------------
+	FILE *ptr = fopen("../../../data/ds14_scivis_0128_e4_dt04_1.0000", "rb");
+	struct halo h;
+	int status;
+	if (!ptr)
+	{
+		printf("Unable to open file!\n");
+		return 1;
+	}
+	size_t offset = 2720 + 16 * (4 + 20);
+	fseek(ptr, offset, SEEK_SET);
+	fseek(ptr, 0, SEEK_END);
+	size_t ntotal = (ftell(ptr) - offset) / sizeof(halo);
+	fseek(ptr, offset, SEEK_SET);
+	int nhalos = ntotal;
+	halo *halos = (halo *)malloc(nhalos * sizeof(halo));
+	status = fread(halos, sizeof(halo), nhalos, ptr);
+	if (status == -1){
+		printf("Invalid read");
+	}
+
+	float acc_min = 0, acc_max = 0, vel_min = 0, vel_max = 0, phi_min = 0, phi_max = 0, den_min = 0, den_max = 0;
+	size_t acc_width = 100, vel_width = 100, phi_width = 100, den_width = 100;
+
+	size_t acc_index, vel_index, phi_index, den_index;
+	float d_acc, d_vel, d_phi, d_den;
+
+	float maxax = 0, minax = 0, maxay = 0, minay = 0, maxaz = 0, minaz = 0, minacc=0, maxacc=0;
+	float maxvx = 0, minvx = 0, maxvy = 0, minvy = 0, maxvz = 0, minvz = 0, minvel=0, maxvel=0;
+	float maxphi = 0, minphi = 0;
+	float xmin = 0, xmax = 0, ymin = 0, ymax = 0, zmin = 0, zmax = 0;
+	int newx, newy, newz;
+	float dx, dy, dz;
+
+	for (int i = 0; i < ntotal; i++){
+
+		if (halos[i].ax>maxax)
+			maxax = halos[i].ax;
+		if (halos[i].ax<minax)
+			minax = halos[i].ax;
+		if (halos[i].ay>maxay)
+			maxay = halos[i].ay;
+		if (halos[i].ay<minay)
+			minay = halos[i].ay;
+		if (halos[i].az>maxaz)
+			maxaz = halos[i].az;
+		if (halos[i].az<minaz)
+			minaz = halos[i].az;
+
+		if (halos[i].vx>maxvx)
+			maxvx = halos[i].vx;
+		if (halos[i].vx<minvx)
+			minvx = halos[i].vx;
+		if (halos[i].vy>maxvy)
+			maxvy = halos[i].vy;
+		if (halos[i].vy<minvy)
+			minvy = halos[i].vy;
+		if (halos[i].vz>maxvz)
+			maxvz = halos[i].vz;
+		if (halos[i].vz<minvz)
+			minvz = halos[i].vz;
+
+		if (halos[i].phi>maxphi)
+			maxphi = halos[i].phi;
+		if (halos[i].vx<minphi)
+			minphi = halos[i].phi;
+
+		if (halos[i].x>xmax)
+			xmax = halos[i].x;
+		if (halos[i].x<xmin)
+			xmin = halos[i].x;
+		if (halos[i].y>ymax)
+			ymax = halos[i].y;
+		if (halos[i].y<ymin)
+			ymin = halos[i].y;
+		if (halos[i].z>zmax)
+			zmax = halos[i].z;
+		if (halos[i].z<zmin)
+			zmin = halos[i].z;
+	}
+
+	
+
+
+
+	for (int i = 0; i < ntotal; i++){
+
+		halos[i].ax = halos[i].ax - minax;
+		halos[i].ay = halos[i].ay - minay;
+		halos[i].az = halos[i].az - minaz;
+
+		halos[i].vx = halos[i].vx - minvx;
+		halos[i].vy = halos[i].vy - minvy;
+		halos[i].vz = halos[i].vz - minvz;
+
+		halos[i].phi = halos[i].phi - minphi;
+
+		halos[i].x = halos[i].x - xmin;
+		halos[i].y = halos[i].y - ymin;
+		halos[i].z = halos[i].z - zmin;
+
+	}
+
+	dx = (xmax - xmin) / 20;
+	dy = (ymax - ymin) / 20;
+	dz = (zmax - zmin) / 20;
+
+	int denser[20][20][20] = {};
+	for (int i = 0; i < ntotal; i++){
+		newx = (int)(halos[i].x / dx);
+		if (newx == 20)
+			newx = newx - 1;
+		newy = (int)(halos[i].y / dy);
+		if (newy == 20)
+			newy = newy - 1;
+		newz = (int)(halos[i].z / dz);
+		if (newz == 20)
+			newz = newz - 1;
+		denser[newx][newy][newz] = denser[newx][newy][newz] + 1;
+	}
+
+	for (int i = 0; i < 20; i++)
+		for (int j = 0; j < 20; j++)
+			for (int k = 0; k < 20; k++){
+		if (denser[i][j][k]>den_max)
+			den_max = denser[i][j][k];
+			}
+
+	d_den = den_max / den_width;
+
+	for (int i = 0; i < 20; i++)
+		for (int j = 0; j < 20; j++)
+			for (int k = 0; k < 20; k++){
+		denser[i][j][k] = denser[i][j][k] /d_den;
+		if (denser[i][j][k] = den_width)
+			denser[i][j][k] = denser[i][j][k] - 1;
+			}
+
+	for (int i = 0; i < ntotal; i++){
+		if (sqrt(pow(halos[i].ax,2)+pow(halos[i].ay,2)+pow(halos[i].az,2))>maxacc)
+			maxacc = sqrt(pow(halos[i].ax, 2) + pow(halos[i].ay, 2) + pow(halos[i].az, 2));
+		if (sqrt(pow(halos[i].vx, 2) + pow(halos[i].vy, 2) + pow(halos[i].vz, 2))>maxvel)
+			maxvel = sqrt(pow(halos[i].vx, 2) + pow(halos[i].vy, 2) + pow(halos[i].vz, 2));
+	}
+
+	d_acc = maxacc / acc_width;
+	d_vel = maxvel / vel_width;
+	d_phi = (maxphi - minphi) / phi_width;
+
+	
+	float gist1[40000] = {};
+	float gist2[40000] = {};
+	float gist3[40000] = {};
+	float gist4[40000] = {};
+	float gist5[40000] = {};
+	float gist6[40000] = {};
+
+	
+
+	for (int i = 0; i < ntotal; i++){
+		acc_index = (size_t)((sqrt(pow(halos[i].ax, 2) + pow(halos[i].ay, 2) + pow(halos[i].az, 2))) / d_acc);
+		if (acc_index == acc_width)
+			acc_index = acc_index - 1;
+		vel_index = (size_t)((sqrt(pow(halos[i].vx, 2) + pow(halos[i].vy, 2) + pow(halos[i].vz, 2))) / d_vel);
+		if (vel_index == vel_width)
+			vel_index = vel_index - 1;
+		phi_index = (size_t)(halos[i].phi / d_phi);
+		if (phi_index == phi_width)
+			phi_index = phi_index - 1;
+		int cx = (int)halos[i].x / dx;
+		int cy = (int)halos[i].y / dy;
+		int cz = (int)halos[i].z / dz;
+		den_index = denser[cx][cy][cz];
+
+		gist1[(acc_index + vel_index*acc_width) * 4] = 1.0;
+		gist1[(acc_index + vel_index*acc_width) * 4 + 1] = 1.0;
+		gist1[(acc_index + vel_index*acc_width) * 4 + 2] = 1.0;
+		gist1[(acc_index + vel_index*acc_width) * 4 + 3] = gist1[(acc_index + vel_index*acc_width) * 4 + 3] + 0.01;
+
+		gist2[(acc_index + den_index*acc_width) * 4] = 1.0;
+		gist2[(acc_index + den_index*acc_width) * 4 + 1] = 1.0;
+		gist2[(acc_index + den_index*acc_width) * 4 + 2] = 1.0;
+		gist2[(acc_index + den_index*acc_width) * 4 + 3] = gist2[(acc_index + den_index*acc_width) * 4 + 3] + 0.01;
+
+		gist3[(acc_index + phi_index*acc_width) * 4] = 1.0;
+		gist3[(acc_index + phi_index*acc_width) * 4 + 1] = 1.0;
+		gist3[(acc_index + phi_index*acc_width) * 4 + 2] = 1.0;
+		gist3[(acc_index + phi_index*acc_width) * 4 + 3] = gist3[(acc_index + phi_index*acc_width) * 4 + 3] + 0.01;
+
+		gist4[(vel_index + den_index*vel_width) * 4] = 1.0;
+		gist4[(vel_index + den_index*vel_width) * 4 + 1] = 1.0;
+		gist4[(vel_index + den_index*vel_width) * 4 + 2] = 1.0;
+		gist4[(vel_index + den_index*vel_width) * 4 + 3] = gist4[(vel_index + den_index*vel_width) * 4 + 3] + 0.01;
+
+		gist5[(vel_index + phi_index*vel_width) * 4] = 1.0;
+		gist5[(vel_index + phi_index*vel_width) * 4 + 1] = 1.0;
+		gist5[(vel_index + phi_index*vel_width) * 4 + 2] = 1.0;
+		gist5[(vel_index + phi_index*vel_width) * 4 + 3] = gist5[(vel_index + phi_index*vel_width) * 4 + 3] + 0.01;
+
+		gist6[(den_index + phi_index*den_width) * 4] = 1.0;
+		gist6[(den_index + phi_index*den_width) * 4 + 1] = 1.0;
+		gist6[(den_index + phi_index*den_width) * 4 + 2] = 1.0;
+		gist6[(den_index + phi_index*den_width) * 4 + 3] = gist6[(den_index + phi_index*den_width) * 4 + 3] + 0.01;
+
+	}
+
+	//To here-------------------------------------------------------------------------------------------------
+
     // init and upload transfer function texture
     glActiveTexture(GL_TEXTURE1);
     g_transfer_texture = createTexture2D(255u, 1u, (char*)&g_transfer_fun.get_RGBA_transfer_function_buffer()[0]);
@@ -1503,7 +1728,7 @@ int main(int argc, char* argv[])
 
 	// init and upload multi dimensional transfer function texture
 	float pixels1[] = {
-		243.0f, 115.0f, 0.0f, 0.0f, //orange
+		243.0f, 115.0f, 0.0f, 0.001f, //orange
 		204.0f, 232.0f, 139.0f, 0.05f, // light green
 		0.0f, 136.0f, 55.0f, 0.05f, // green
 		254.0f, 154.0f, 166.0f, 0.1f, //light pink
@@ -1514,7 +1739,7 @@ int main(int argc, char* argv[])
 		90.0f, 77.0f, 164.0f, 0.1f // violet
 	};
 	glActiveTexture(GL_TEXTURE8);
-	g_multi_tran1 = multiTexture2D(3u, 3u, pixels1);
+	g_multi_tran1 = multiTexture2D(3, 3, pixels1);
 
 	float pixels2[] = {
 		196.0f, 179.0f, 216.0f, 0.8f, //light violet
@@ -1523,13 +1748,13 @@ int main(int argc, char* argv[])
 		124.0f, 103.0f, 171.0f, 0.2f, //violet
 		191.0f, 191.0f, 191.0f, 0.2f, //grey
 		243.0f, 89.0f, 38.0f, 0.5f, //orange
-		36.0f, 13.0f, 94.0f, 0.00f, //super violet
+		36.0f, 13.0f, 94.0f, 0.001f, //super violet
 		127.0f, 127.0f, 127.0f, 0.3f, //super grey
 		179.0f, 0.0f, 0.0f, 0.5f //super orange
 
 	};
 	glActiveTexture(GL_TEXTURE9);
-	g_multi_tran2 = multiTexture2D(3u, 3u, pixels2);
+	g_multi_tran2 = multiTexture2D(3, 3, pixels2);
 
 	float pixels3[] = {
 		255.0f, 255.0f, 255.0f, 0.05f, //white
@@ -1538,14 +1763,14 @@ int main(int argc, char* argv[])
 		243.0f, 230.0f, 179.0f, 0.1f, //light yellow
 		179.0f, 179.0f, 179.0f, 0.1f, //grey
 		55.0f, 99.0f, 135.0f, 0.1f, //dark blue
-		243.0f, 179.0f, 0.0f, 0.00f, //yellow
+		243.0f, 179.0f, 0.0f, 0.001f, //yellow
 		179.0f, 102.0f, 0.0f, 0.1f, //brown
 		0.0f, 0.0f, 0.0f, 0.1f // black
 	};
 	glActiveTexture(GL_TEXTURE10);
-	g_multi_tran3 = multiTexture2D(3u, 3u, pixels3);
+	g_multi_tran3 = multiTexture2D(3, 3, pixels3);
 
-	
+
 	
 	//other way around just in case
 	//float pixels4[] = {
@@ -1574,7 +1799,30 @@ int main(int argc, char* argv[])
 
 	};
 	glActiveTexture(GL_TEXTURE11);
-	g_multi_tran4 = multiTexture2D(3u, 3u, pixels4);
+	g_multi_tran4 = multiTexture2D(3, 3, pixels4);
+
+
+
+	glActiveTexture(GL_TEXTURE12);
+	g_gisto1 = multiTexture2D(100, 100, gist1);
+
+	glActiveTexture(GL_TEXTURE13);
+	g_gisto2 = multiTexture2D(100, 100, gist2);
+
+	glActiveTexture(GL_TEXTURE14);
+	g_gisto3 = multiTexture2D(100, 100, gist3);
+
+	glActiveTexture(GL_TEXTURE15);
+	g_gisto4 = multiTexture2D(100, 100, gist4);
+
+	glActiveTexture(GL_TEXTURE16);
+	g_gisto5 = multiTexture2D(100, 100, gist5);
+
+	glActiveTexture(GL_TEXTURE17);
+	g_gisto6 = multiTexture2D(100, 100, gist6);
+
+
+
 
     // loading actual raytracing shader code (volume.vert, volume.frag)
     // edit volume.frag to define the result of our volume raycaster  
@@ -1829,6 +2077,25 @@ int main(int argc, char* argv[])
 		glBindTexture(GL_TEXTURE_2D, g_multi_tran4);
 		glUniform1i(glGetUniformLocation(g_volume_program, "multi_transfer4"), 11);
 
+		//glActiveTexture(GL_TEXTURE12);
+		//glBindTexture(GL_TEXTURE_2D, g_gisto1);
+		//glUniform1i(glGetUniformLocation(g_volume_program, "gistogram1"), 12);
+		//glActiveTexture(GL_TEXTURE13);
+		//glBindTexture(GL_TEXTURE_2D, g_gisto2);
+		//glUniform1i(glGetUniformLocation(g_volume_program, "gistogram2"), 13);
+		//glActiveTexture(GL_TEXTURE14);
+		//glBindTexture(GL_TEXTURE_2D, g_gisto3);
+		//glUniform1i(glGetUniformLocation(g_volume_program, "gistogram3"), 14);
+		//glActiveTexture(GL_TEXTURE15);
+		//glBindTexture(GL_TEXTURE_2D, g_gisto4);
+		//glUniform1i(glGetUniformLocation(g_volume_program, "gistogram4"), 15);
+		//glActiveTexture(GL_TEXTURE16);
+		//glBindTexture(GL_TEXTURE_2D, g_gisto5);
+		//glUniform1i(glGetUniformLocation(g_volume_program, "gistogram5"), 16);
+		//glActiveTexture(GL_TEXTURE17);
+		//glBindTexture(GL_TEXTURE_2D, g_gisto6);
+		//glUniform1i(glGetUniformLocation(g_volume_program, "gistogram6"), 17);
+
         glUniform3fv(glGetUniformLocation(g_volume_program, "camera_location"), 1,
             glm::value_ptr(camera_location));
         glUniform1f(glGetUniformLocation(g_volume_program, "sampling_distance"), g_sampling_distance * sampling_fact);
@@ -1871,7 +2138,7 @@ int main(int argc, char* argv[])
         
         
 		
-		
+		//displaying correct transfer function in transfer function window
 		if ((g_show_transfer_function) && (g_active_function == 0)){
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, g_transfer_texture);
@@ -1902,7 +2169,7 @@ int main(int argc, char* argv[])
 			glBindTexture(GL_TEXTURE_2D, 0);
 			
 		}
-		
+		//displaying multidimensional transfer function currently in use
 		if ((g_task_chosen == 5) && (g_func_chosen == 2)){
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, g_multi_tran1);
@@ -1931,11 +2198,52 @@ int main(int argc, char* argv[])
 			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 
+		//displaying histograms
+		if ((g_task_chosen == 5) && (g_pair_chosen == 12)){
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, g_gisto1);
+			g_transfer_fun.draw_texture(g_gist_pos, g_gist_size, g_gisto1);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
+		if ((g_task_chosen == 5) && (g_pair_chosen == 13)){
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, g_gisto2);
+			g_transfer_fun.draw_texture(g_gist_pos, g_gist_size, g_gisto2);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
+		if ((g_task_chosen == 5) && (g_pair_chosen == 14)){
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, g_gisto3);
+			g_transfer_fun.draw_texture(g_gist_pos, g_gist_size, g_gisto3);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
+		if ((g_task_chosen == 5) && (g_pair_chosen == 23)){
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, g_gisto4);
+			g_transfer_fun.draw_texture(g_gist_pos, g_gist_size, g_gisto4);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
+		if ((g_task_chosen == 5) && (g_pair_chosen == 24)){
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, g_gisto5);
+			g_transfer_fun.draw_texture(g_gist_pos, g_gist_size, g_gisto5);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
+		if ((g_task_chosen == 5) && (g_pair_chosen == 34)){
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, g_gisto6);
+			g_transfer_fun.draw_texture(g_gist_pos, g_gist_size, g_gisto6);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
 
 
 
-
-		//glBindTexture(GL_TEXTURE_2D, 0);
+		glBindTexture(GL_TEXTURE_2D, 0);
 		
 		g_win.update();
         first_frame = false;
